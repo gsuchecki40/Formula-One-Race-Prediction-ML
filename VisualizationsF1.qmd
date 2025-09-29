@@ -1,0 +1,116 @@
+---
+title: "Visualizations"
+author: "Grant Suchecki"
+format:
+  html:
+    toc: true
+    toc-location: left
+    self-contained: true
+jupyter: python3
+---
+
+
+```{python}
+import pandas as pd
+import numpy as np 
+import matplotlib.pyplot as plt
+```
+
+
+```{python}
+df = pd.read_csv('Processed_F1_Results.csv')
+```
+
+
+```{python}
+df.head(10)
+```
+
+```{python}
+df.tail(10)
+```
+
+# Vis of all drivers vs all time average race finish time
+
+```{python}
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# Assuming df is your processed dataframe with DeviationFromAvg_s
+# Step 1: compute average deviation per driver
+driver_avg_delta = (
+    df.groupby('Abbreviation')['DeviationFromAvg_s']
+    .mean()
+    .reset_index()
+    .rename(columns={'DeviationFromAvg_s': 'AvgDeviationFromRace'})
+)
+
+# Step 2: sort for nice ordering
+df_sorted = driver_avg_delta.sort_values('AvgDeviationFromRace').reset_index(drop=True)
+
+# Step 3: plot waterfall-style bars
+fig, ax = plt.subplots(figsize=(12, 6))
+
+for i, row in df_sorted.iterrows():
+    val = row['AvgDeviationFromRace']
+    color = 'green' if val < 0 else 'red'
+    bar = ax.bar(row['Abbreviation'], val, color=color)
+    
+    # Add text annotation
+    ax.text(
+        row['Abbreviation'],                # x
+        val + (1 if val >= 0 else -1),      # y position, offset for visibility
+        f"{val:.1f}",                       # label with 1 decimal
+        ha='center', va='bottom' if val >= 0 else 'top',
+        fontsize=8, rotation=90
+    )
+
+# horizontal line at zero
+ax.axhline(0, color='black', linewidth=0.8)
+
+# labels and title
+ax.set_title("Average Deviation from Race Average (Waterfall View)", fontsize=14)
+ax.set_ylabel("Seconds vs. Race Average")
+plt.xticks(rotation=45, ha='right')
+
+plt.tight_layout()
+plt.show()
+```
+
+# Plot of AirTemp vs Time Deviation
+
+```{python}
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+
+# Make sure columns are numeric
+df['AirTemp_C'] = pd.to_numeric(df['AirTemp_C'], errors='coerce')
+df['DeviationFromAvg_s'] = pd.to_numeric(df['DeviationFromAvg_s'], errors='coerce')
+
+# Drop rows with missing values
+clean_df = df.dropna(subset=['AirTemp_C', 'DeviationFromAvg_s'])
+
+plt.figure(figsize=(10, 6))
+
+# Scatter plot
+plt.scatter(clean_df['AirTemp_C'], clean_df['DeviationFromAvg_s'], alpha=0.4, s=20, c="blue")
+
+# Add regression line (numpy polyfit)
+m, b = np.polyfit(clean_df['AirTemp_C'], clean_df['DeviationFromAvg_s'], 1)
+plt.plot(clean_df['AirTemp_C'], m*clean_df['AirTemp_C'] + b, color="red", linewidth=2)
+
+# Labels
+plt.title("Air Temperature vs Deviation from Race Average", fontsize=14, fontweight='bold')
+plt.xlabel("Air Temperature (°C)")
+plt.ylabel("Deviation from Avg (s)")
+plt.grid(alpha=0.3)
+
+plt.tight_layout()
+plt.show()
+
+# Optional: Pearson correlation coefficient
+corr = clean_df[['AirTemp_C', 'DeviationFromAvg_s']].corr().iloc[0,1]
+print(f"Correlation between AirTemp and Deviation: {corr:.3f}")
+
+```

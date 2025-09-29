@@ -1,0 +1,95 @@
+---
+title: "Untitled"
+format: html
+---
+
+
+```{python}
+import fastf1
+import pandas as pd
+import numpy as np
+
+fastf1.Cache.enable_cache('f1_cache')  
+
+def get_avg_weather_for_season(year):
+    """Return average race-day weather conditions for one season, skipping rounds with missing weather data."""
+    schedule = fastf1.get_event_schedule(year)
+    results = []
+    
+    for _, event in schedule.iterrows():
+        try:
+            session = fastf1.get_session(year, event['RoundNumber'], 'R')
+            session.load()
+            weather = session.weather_data
+            avg_weather = weather.mean(numeric_only=True)
+            
+            # Skip if any weather value is missing
+            if avg_weather[['AirTemp', 'TrackTemp', 'Humidity', 'Pressure', 'WindSpeed', 'WindDirection']].isnull().any():
+                continue
+            
+            results.append({
+                'Year': year,
+                'Round': event['RoundNumber'],
+                'AirTemp_C': avg_weather['AirTemp'],
+                'TrackTemp_C': avg_weather['TrackTemp'],
+                'Humidity_%': avg_weather['Humidity'],
+                'Pressure_hPa': avg_weather['Pressure'],
+                'WindSpeed_mps': avg_weather['WindSpeed'],
+                'WindDirection_deg': avg_weather['WindDirection']
+            })
+        except Exception as e:
+            print(f"Skipping {year} Round {event['RoundNumber']} due to error: {e}")
+    
+    return pd.DataFrame(results)
+
+def get_avg_weather_multi_year(start_year, end_year):
+    """Return average race-day weather conditions for multiple seasons."""
+    all_data = []
+    for year in range(start_year, end_year + 1):
+        print(f"Processing {year} season...")
+        season_data = get_avg_weather_for_season(year)
+        all_data.append(season_data)
+    return pd.concat(all_data, ignore_index=True)
+
+# Get 2023–2025 seasons
+df_weather = get_avg_weather_multi_year(2023, 2025)
+print(df_weather)
+df_weather.to_csv("f1_avg_weather_2023_2025.csv", index=False)
+```
+
+
+```{python}
+import fastf1
+import pandas as pd
+
+fastf1.Cache.enable_cache('f1_cache')
+
+df_results = pd.read_csv('race_results_2023_2024_2025.csv')
+
+def get_avg_pitstop_time(season, round_number, driver_code):
+    try:
+        session = fastf1.get_session(season, round_number, 'R')
+        session.load()
+        laps = session.laps
+        pitstops = laps[laps['Driver'] == driver_code]['PitTime']
+        if pitstops.empty and 'DriverNumber' in laps.columns:
+            pitstops = laps[laps['DriverNumber'] == str(driver_code)]['PitTime']
+        if pitstops.notnull().any():
+            return pitstops.mean()
+        else:
+            return None
+    except Exception as e:
+        print(f"Error for {season} round {round_number} driver {driver_code}: {e}")
+        return None
+
+df_results['AvgPitStopTime'] = None
+
+for idx, row in df_results.iterrows():
+    season = row['Season']
+    round_number = row['RoundNumber']
+    driver_code = row['BroadcastName']
+    avg_pit_time = get_avg_pitstop_time(season, round_number, driver_code)
+    df_results.at[idx, 'AvgPitStopTime'] = avg_pit_time
+
+df_results.to_csv('race_results_2023_2024_2025.csv', index=False)
+```

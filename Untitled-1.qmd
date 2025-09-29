@@ -1,0 +1,166 @@
+---
+title: "Untitled"
+format: html
+---
+
+
+```{python}
+import matplotlib.pyplot as plt
+
+import fastf1.plotting
+```
+
+
+```{python}
+session = fastf1.get_session(2023, 1, 'R')
+session.load(telemetry=True, weather=True)
+```
+
+
+```{python}
+session
+```
+
+
+```{python}
+session.laps
+```
+
+
+```{python}
+import fastf1
+import pandas as pd
+
+years = [2022, 2023, 2024]
+all_results = []
+
+for year in years:
+    schedule = fastf1.get_event_schedule(year)
+    for _, race in schedule.iterrows():
+        if race['EventFormat'] == 'conventional':
+            session = fastf1.get_session(year, race['RoundNumber'], 'R')
+            session.load()
+            results = session.results.copy()
+            results['Season'] = year
+            results['EventName'] = race['EventName']
+
+            # Fastest lap for each driver
+            fastest_laps = session.laps.groupby('Driver').apply(lambda x: x.pick_fastest())
+            fastest_laps = fastest_laps.reset_index(drop=True)[['Driver', 'LapTime', 'Compound']]
+
+            # Merge fastest lap info into results
+            results = results.merge(fastest_laps, left_on='Abbreviation', right_on='Driver', how='left', suffixes=('', '_FastestLap'))
+
+            # Weather data (take average for the race)
+            weather = session.weather_data.mean(numeric_only=True)
+            for col in weather.index:
+                results[col] = weather[col]
+
+            all_results.append(results)
+
+# Combine all results into one DataFrame
+combined_results = pd.concat(all_results, ignore_index=True)
+
+# Save to CSV
+combined_results.to_csv('detailed_race_results_2022_2023_2024.csv', index=False)
+print("CSV file saved as detailed_race_results_2022_2023_2024.csv")
+```
+
+
+```{python}
+import fastf1
+
+year = 2021
+schedule = fastf1.get_event_schedule(year)
+
+for _, race in schedule.iterrows():
+    if race['EventFormat'] == 'conventional':
+        session = fastf1.get_session(year, race['RoundNumber'], 'R')
+        session.load()
+        print(f"Results for {race['EventName']}:")
+        print(session.results[['Position', 'DriverNumber', 'Abbreviation', 'TeamName', 'Time', 'Status']])
+        print('-' * 40)
+```
+
+
+
+```{python}
+import fastf1
+import pandas as pd
+
+years = [2021, 2022, 2023]
+all_results = []
+
+for year in years:
+    try:
+        schedule = fastf1.get_event_schedule(year)
+    except Exception as e:
+        print(f"Failed to load schedule data for {year}: {e}")
+        continue
+    for _, race in schedule.iterrows():
+        if race['EventFormat'] == 'conventional':
+            try:
+                session = fastf1.get_session(year, race['RoundNumber'], 'R')
+                session.load()
+                results = session.results.copy()
+                results['Season'] = year
+                results['EventName'] = race['EventName']
+
+                # Fastest lap for each driver
+                fastest_laps = session.laps.groupby('Driver').apply(lambda x: x.pick_fastest())
+                fastest_laps = fastest_laps.reset_index(drop=True)[['Driver', 'LapTime', 'Compound']]
+
+                # Merge fastest lap info into results
+                results = results.merge(fastest_laps, left_on='Abbreviation', right_on='Driver', how='left', suffixes=('', '_FastestLap'))
+
+                # Weather data (take average for the race)
+                weather = session.weather_data.mean(numeric_only=True)
+                for col in weather.index:
+                    results[col] = weather[col]
+
+                all_results.append(results)
+            except Exception as e:
+                print(f"Skipping {race['EventName']} {year} due to error: {e}")
+
+# Combine all results into one DataFrame
+if all_results:
+    combined_results = pd.concat(all_results, ignore_index=True)
+    combined_results.to_csv('detailed_race_results_2021_2022_2023.csv', index=False)
+    print("CSV file saved as detailed_race_results_2021_2022_2023.csv")
+else:
+    print("No race results collected.")
+```
+
+
+```{python}
+import fastf1
+import pandas as pd
+
+years = [2023, 2024, 2025]
+all_results = []
+
+for year in years:
+    try:
+        schedule = fastf1.get_event_schedule(year)
+    except Exception as e:
+        print(f"Failed to load schedule data for {year}: {e}")
+        continue
+    for _, race in schedule.iterrows():
+        try:
+            session = fastf1.get_session(year, race['RoundNumber'], 'R')
+            session.load()
+            results = session.results.copy()
+            results['Season'] = year
+            results['RoundNumber'] = race['RoundNumber']
+            all_results.append(results)
+        except Exception as e:
+            print(f"Skipping round {race['RoundNumber']} {year} due to error: {e}")
+
+# Combine all results into one DataFrame
+if all_results:
+    combined_results = pd.concat(all_results, ignore_index=True)
+    combined_results.to_csv('race_results_2023_2024_2025.csv', index=False)
+    print("CSV file saved as race_results_2023_2024_2025.csv")
+else:
+    print("No race results collected.")
+```

@@ -1,0 +1,9 @@
+seaborn
+matplotlib
+pandas
+numpy
+scikit-learn
+joblib
+fastf1
+shap
+xgboost

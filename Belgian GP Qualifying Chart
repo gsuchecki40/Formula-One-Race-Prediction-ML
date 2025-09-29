@@ -1,0 +1,77 @@
+---
+title: "Untitled"
+format: html
+---
+
+
+```{python}
+import fastf1
+import matplotlib.pyplot as plt
+import pandas as pd
+from fastf1.core import Laps
+import fastf1.plotting
+import datetime
+
+# Load session
+new_session = fastf1.get_session(2021, 'Abu Dhabi Grand Prix', 'Q')
+new_session.load()
+
+# Setup plotting
+fastf1.plotting.setup_mpl(mpl_timedelta_support=True, color_scheme=None)
+
+# Get unique drivers
+drivers = pd.unique(new_session.laps['Driver'])
+print(drivers)
+
+# Get Fastest Laps
+list_fastest_laps = []
+for drv in drivers:
+    drvs_fastest_lap = new_session.laps.pick_drivers(drv).pick_fastest()
+    if drvs_fastest_lap is not None:
+        list_fastest_laps.append(drvs_fastest_lap)
+
+if list_fastest_laps:
+    fastest_laps = Laps(list_fastest_laps).sort_values(by='LapTime').reset_index(drop=True)
+
+    # Calculate LapTimeDelta
+    pole_lap = fastest_laps.pick_fastest()
+    fastest_laps['LapTimeDelta'] = fastest_laps['LapTime'] - pole_lap['LapTime']
+
+    print(fastest_laps[['Driver','LapTime','LapTimeDelta']])
+
+    # Get team colors
+    team_colors = []
+    for index, lap in fastest_laps.iterlaps():
+        color = fastf1.plotting.get_team_color(lap['Team'], session=new_session)
+        team_colors.append(color)
+
+    # Time to plot
+    fig, ax = plt.subplots()
+    ax.barh(fastest_laps.index, fastest_laps['LapTimeDelta'],color=team_colors,edgecolor='grey')
+    ax.set_yticks(fastest_laps.index)
+    ax.set_yticklabels(fastest_laps['Driver'])
+
+    # Show fastest lap at the top
+    ax.invert_yaxis()
+
+    #Draw vertical lines behind the bars
+    ax.set_axisbelow(True)
+    ax.xaxis.grid(True,which='major',linestyle='--',color='black',zorder=-1000)
+
+    # Format lap time string
+    lap_time = pole_lap['LapTime']
+    if isinstance(lap_time, (pd.Timedelta, datetime.timedelta)):
+        total_seconds = lap_time.total_seconds()
+        minutes = int(total_seconds // 60)
+        seconds = int(total_seconds % 60)
+        milliseconds = int((total_seconds - minutes * 60 - seconds) * 1000)
+        lap_time_string = f"{minutes:02d}:{seconds:02d}.{milliseconds:03d}"
+    else:
+        lap_time_string = str(lap_time)
+
+    plt.suptitle(f"{new_session.event['EventName']} {new_session.event.year} Qualifying \nPole Sitter: {lap_time_string} ({pole_lap['Driver']})")
+else:
+    print("No valid fastest laps found for any driver.")
+
+# Found out that Kubica never set a laptime
+```

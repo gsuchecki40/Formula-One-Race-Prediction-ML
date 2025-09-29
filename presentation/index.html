@@ -1,0 +1,156 @@
+<!doctype html>
+<html>
+<head><meta charset='utf-8'><title>Presentation</title></head>
+<body>
+<h1>Model Presentation</h1>
+<h2>Metrics</h2><h3>Uncalibrated</h3><table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>type</th>
+      <th>n</th>
+      <th>mse</th>
+      <th>rmse</th>
+      <th>mae</th>
+      <th>r2</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>uncalibrated</td>
+      <td>5</td>
+      <td>29.293364</td>
+      <td>5.412334</td>
+      <td>4.782464</td>
+      <td>0.249658</td>
+    </tr>
+  </tbody>
+</table><h3>Calibrated</h3><table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>type</th>
+      <th>n</th>
+      <th>mse</th>
+      <th>rmse</th>
+      <th>mae</th>
+      <th>r2</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>calibrated</td>
+      <td>5</td>
+      <td>29.293364</td>
+      <td>5.412334</td>
+      <td>4.782464</td>
+      <td>0.249658</td>
+    </tr>
+  </tbody>
+</table>
+<h2>Plots</h2>
+<ul>
+<li><img src='preds_vs_true.png' width='700'></li>
+<li><img src='residuals_hist.png' width='700'></li>
+<li><img src='prediction_hist.png' width='700'></li>
+<li><img src='residual_vs_grid.png' width='700'></li>
+<li><img src='residuals_by_compound.png' width='700'></li>
+<li><img src='waterfall_pred_result.png' width='900'></li>
+<li><img src='shap_feature_importance.png' width='400'></li>
+<li><img src='team_performance_by_weather.png' width='900'></li>
+</ul>
+<h2>Top-10 absolute errors</h2>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>index</th>
+      <th>DriverNumber</th>
+      <th>GridPosition</th>
+      <th>prediction</th>
+      <th>DeviationFromAvg_s</th>
+      <th>abs_error</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>767</td>
+      <td>81</td>
+      <td>2.0</td>
+      <td>-17.935621</td>
+      <td>43.705125</td>
+      <td>61.640746</td>
+    </tr>
+    <tr>
+      <td>466</td>
+      <td>14</td>
+      <td>10.0</td>
+      <td>1.817315</td>
+      <td>57.437875</td>
+      <td>55.620560</td>
+    </tr>
+    <tr>
+      <td>826</td>
+      <td>55</td>
+      <td>10.0</td>
+      <td>-0.962467</td>
+      <td>54.554667</td>
+      <td>55.517134</td>
+    </tr>
+    <tr>
+      <td>566</td>
+      <td>44</td>
+      <td>3.0</td>
+      <td>-5.840187</td>
+      <td>43.763667</td>
+      <td>49.603854</td>
+    </tr>
+    <tr>
+      <td>911</td>
+      <td>24</td>
+      <td>17.0</td>
+      <td>27.388733</td>
+      <td>76.556438</td>
+      <td>49.167704</td>
+    </tr>
+    <tr>
+      <td>598</td>
+      <td>20</td>
+      <td>13.0</td>
+      <td>21.412277</td>
+      <td>70.095278</td>
+      <td>48.683001</td>
+    </tr>
+    <tr>
+      <td>668</td>
+      <td>1</td>
+      <td>2.0</td>
+      <td>-27.459244</td>
+      <td>19.218353</td>
+      <td>46.677597</td>
+    </tr>
+    <tr>
+      <td>760</td>
+      <td>81</td>
+      <td>2.0</td>
+      <td>-26.176407</td>
+      <td>-72.284563</td>
+      <td>46.108156</td>
+    </tr>
+    <tr>
+      <td>784</td>
+      <td>3</td>
+      <td>14.0</td>
+      <td>29.183407</td>
+      <td>74.622438</td>
+      <td>45.439031</td>
+    </tr>
+    <tr>
+      <td>1185</td>
+      <td>63</td>
+      <td>5.0</td>
+      <td>-6.089308</td>
+      <td>39.347313</td>
+      <td>45.436621</td>
+    </tr>
+  </tbody>
+</table>
+</body>
+</html>

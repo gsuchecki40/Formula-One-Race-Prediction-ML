@@ -1,0 +1,608 @@
+---
+title: "Visualizations"
+author: "Grant Suchecki"
+format:
+  html:
+    toc: true
+    toc-location: left
+    self-contained: true
+jupyter: python3
+---
+
+
+```{python}
+import pandas as pd
+import numpy as np
+import matplotlib as plt
+```
+
+
+```{python}
+df = pd.read_csv('~/Desktop/Desktop/Essentials/NotreDame/Personal Python/Formula1/F1_with_TireProportions.csv')
+
+```
+
+
+```{python}
+df.head()
+```
+
+## 
+
+```{python}
+import pandas as pd
+
+def add_driver_form_features(
+    df,
+    driver_col="Driver",
+    season_col="Season",
+    week_col="Round",
+    perf_col="DeviationFromAvg_s",
+):
+    """
+    Adds prior-form features for each driver within each season based on a performance column.
+    Assumes one row per (driver, season, week) race result.
+
+    Created columns:
+      - {perf_col}_last1:  previous race value
+      - {perf_col}_last2:  mean of previous up to 2 races (excluding current)
+      - {perf_col}_last5:  mean of previous up to 5 races (excluding current)
+      - {perf_col}_season_to_date: mean of all prior races in same season
+      - races_prior_this_season: count of prior races in same season
+    """
+
+    # Make a copy so we don't mutate the original
+    df = df.copy()
+
+    # Basic hygiene: enforce dtypes & sort so rolling windows are correct
+    df[week_col] = pd.to_numeric(df[week_col], errors="coerce")
+    df = df.sort_values([driver_col, season_col, week_col]).reset_index(drop=True)
+
+    # Group within (driver, season)
+    g = df.groupby([driver_col, season_col], group_keys=False)
+
+    # 1) Last race (simply shift by 1 within group)
+    df[f"{perf_col}_last1"] = g[perf_col].shift(1)
+
+    # 2) Rolling means over previous 2 and 5 (exclude current via shift(1))
+    for w in (2, 5):
+        df[f"{perf_col}_last{w}"] = g[perf_col].transform(
+            lambda s: s.shift(1).rolling(window=w, min_periods=1).mean()
+        )
+
+    # 3) Season-to-date average (all prior races in the same season)
+    df[f"{perf_col}_season_to_date"] = g[perf_col].transform(
+        lambda s: s.shift(1).expanding(min_periods=1).mean()
+    )
+
+    # (Optional) Count of prior races this season — handy for filtering cold-start rows
+    df["races_prior_this_season"] = g.cumcount()
+
+    return df
+
+# -----------------------------
+# Example usage
+# -----------------------------
+# Suppose your dataframe is named results with columns:
+#   'driver', 'season', 'week', 'deviation_from_average_finish_time'
+# results = pd.read_csv("your_results.csv")
+# enriched = add_driver_form_features(results)
+# display(enriched.head())
+```
+
+
+```{python}
+# Suppose your dataframe is named results with columns:
+  #'Driver', 'Season', 'Round', 'deviation_from_average_finish_time'
+enriched = add_driver_form_features(df)
+display(enriched.head())
+
+enriched.to_csv('premodeldatav1.csv')
+```
+
+
+```{python}
+model = pd.read_csv('premodeldatav1.csv')
+```
+
+
+```{python}
+0
+```
+## XGBoost model — step-by-step
+
+Note: the blocks below show a reproducible XGBoost workflow. On macOS the XGBoost Python wheel sometimes requires the OpenMP runtime (libomp). If you see an import-time error mentioning libomp.dylib, install it with Homebrew (brew install libomp) or use a conda environment. A scikit-learn fallback (HistGradientBoostingRegressor) is included below.
+
+```{python}
+# Step 1 — (optional) install packages
+# Uncomment to install in a running environment
+!pip install xgboost scikit-learn joblib pandas numpy
+```
+
+```{python}
+# Step 2 — imports and xgboost availability check
+import pandas as pd
+import numpy as np
+from pathlib import Path
+import joblib
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_squared_error
+import sys
+import os
+import subprocess
+
+# Print kernel python info so you can spot mismatches between notebook kernel and conda env
+print('Python executable:', sys.executable)
+print('Python version:', sys.version.splitlines()[0])
+
+# Try to detect a conda python to use as an external fallback (common install locations)
+conda_python = None
+if os.environ.get('CONDA_PREFIX'):
+    maybe = os.path.join(os.environ['CONDA_PREFIX'], 'bin', 'python')
+    if os.path.exists(maybe):
+        conda_python = maybe
+        print('Detected conda python via CONDA_PREFIX:', conda_python)
+for candidate in ['/opt/anaconda3/bin/python', '/usr/local/anaconda3/bin/python', '/opt/homebrew/bin/python', '/usr/bin/python3']:
+    if conda_python is None and os.path.exists(candidate):
+        conda_python = candidate
+        print('Detected candidate python path:', conda_python)
+
+try:
+    import xgboost as xgb
+    XGBOOST_AVAILABLE = True
+    print('xgboost available in this kernel:', xgb.__version__)
+except Exception as e:
+    print('xgboost import failed in this kernel. Error:', e)
+    XGBOOST_AVAILABLE = False
+    from sklearn.ensemble import HistGradientBoostingRegressor
+    print('Will use sklearn fallback in-kernel. To run xgboost, execute this notebook with the conda python:', conda_python)
+
+```
+
+```{python}
+# Step 3 — load data and choose features/target
+p = Path('premodeldatav1.csv')
+df = pd.read_csv(p)
+
+features = [
+  'GridPosition',
+  'AirTemp_C',
+  'TrackTemp_C',
+  'Humidity_%',
+  'Pressure_hPa',
+  'WindSpeed_mps',
+  'WindDirection_deg',
+  'SOFT',
+  'MEDIUM',
+  'HARD',
+  'INTERMEDIATE',
+  'WET',
+  'races_prior_this_season',
+]
+target = 'DeviationFromAvg_s'
+
+# drop rows missing the target
+df = df[~df[target].isna()].copy()
+print('rows after dropping missing target:', len(df))
+
+```
+
+```{python}
+# Step 4 — split by season (2023 -> train, 2024 -> val, 2025 -> test)
+train = df[df.get('Season') == 2023].copy()
+val = df[df.get('Season') == 2024].copy()
+test = df[df.get('Season') == 2025].copy()
+
+if len(train) == 0 or len(val) == 0 or len(test) == 0:
+  # fallback to random splits if seasonal splits are missing
+  print('seasonal split incomplete — falling back to random splitting')
+  X = df[features]
+  y = df[target]
+  X_train, X_tmp, y_train, y_tmp = train_test_split(X, y, test_size=0.4, random_state=42)
+  X_val, X_test, y_val, y_test = train_test_split(X_tmp, y_tmp, test_size=0.5, random_state=42)
+else:
+  X_train = train[features].copy()
+  X_val = val[features].copy()
+  X_test = test[features].copy()
+  y_train = train[target]
+  y_val = val[target]
+  y_test = test[target]
+
+print('shapes:', X_train.shape, X_val.shape, X_test.shape)
+
+```
+
+```{python}
+# Step 5 — simple imputation: replace missing values with train median
+for col in features:
+  med = X_train[col].median()
+  X_train[col] = X_train[col].fillna(med)
+  X_val[col] = X_val[col].fillna(med)
+  X_test[col] = X_test[col].fillna(med)
+
+```
+
+```{python}
+# Step 6 — train the model (XGBoost if available, otherwise sklearn HistGradientBoostingRegressor)
+Path('artifacts').mkdir(exist_ok=True)
+
+model = None
+if 'XGBOOST_AVAILABLE' in globals() and XGBOOST_AVAILABLE:
+  dtrain = xgb.DMatrix(X_train, label=y_train)
+  dval = xgb.DMatrix(X_val, label=y_val)
+  params = {
+    'objective': 'reg:squarederror',
+    'eval_metric': 'rmse',
+    'learning_rate': 0.05,
+    'max_depth': 6,
+    'seed': 42,
+  }
+  evals = [(dtrain, 'train'), (dval, 'val')]
+  model = xgb.train(
+    params,
+    dtrain,
+    num_boost_round=1000,
+    evals=evals,
+    early_stopping_rounds=50,
+    verbose_eval=50,
+  )
+else:
+  # If xgboost isn't available in this kernel, try running an external script with conda python
+  model = None
+  if conda_python and os.path.exists(conda_python):
+    print('xgboost not available in-kernel; attempting external xgboost run with:', conda_python)
+    # write an external training script that uses the same features/params
+    external = Path('artifacts/run_xgb_external.py')
+    external.parent.mkdir(exist_ok=True)
+    external_code = '''import pandas as pd
+import xgboost as xgb
+from pathlib import Path
+from sklearn.metrics import mean_squared_error
+
+p = Path('premodeldatav1.csv')
+df = pd.read_csv(p)
+features = %s
+target = '%s'
+df = df[~df[target].isna()].copy()
+train = df[df.get('Season') == 2023].copy()
+val = df[df.get('Season') == 2024].copy()
+test = df[df.get('Season') == 2025].copy()
+X_train = train[features].copy()
+X_val = val[features].copy()
+X_test = test[features].copy()
+y_train = train[target]
+y_val = val[target]
+y_test = test[target]
+for col in features:
+    med = X_train[col].median()
+    X_train[col] = X_train[col].fillna(med)
+    X_val[col] = X_val[col].fillna(med)
+    X_test[col] = X_test[col].fillna(med)
+
+dtrain = xgb.DMatrix(X_train, label=y_train)
+dval = xgb.DMatrix(X_val, label=y_val)
+dtest = xgb.DMatrix(X_test, label=y_test)
+params = {'objective':'reg:squarederror','eval_metric':'rmse','learning_rate':0.05,'max_depth':6,'seed':42}
+bst = xgb.train(params, dtrain, num_boost_round=1000, evals=[(dtrain,'train'),(dval,'val')], early_stopping_rounds=50, verbose_eval=50)
+Path('artifacts').mkdir(exist_ok=True)
+bst.save_model('artifacts/xgb_model.json')
+pd.DataFrame({'y_true': y_val, 'y_pred': bst.predict(dval)}).to_csv('artifacts/val_predictions_xgb_external.csv', index=False)
+pd.DataFrame({'y_true': y_test, 'y_pred': bst.predict(dtest)}).to_csv('artifacts/test_predictions_xgb_external.csv', index=False)
+print('External xgboost run complete')
+'''
+    external.write_text(external_code % (repr(features), target))
+    try:
+      rc = subprocess.call([conda_python, str(external)])
+      if rc == 0:
+        print('External xgboost script finished and wrote artifacts; check artifacts/ for results')
+      else:
+        print('External xgboost script exited with code', rc)
+    except Exception as e:
+      print('Failed to run external xgboost script:', e)
+  else:
+    print('No conda/python fallback detected; training sklearn fallback in-kernel')
+    model = HistGradientBoostingRegressor(max_iter=300, learning_rate=0.05, max_depth=6, random_state=42)
+    model.fit(X_train, y_train)
+
+```
+
+```{python}
+# Step 7 — evaluate and save predictions + model
+if 'XGBOOST_AVAILABLE' in globals() and XGBOOST_AVAILABLE:
+  pred_val = model.predict(dval)
+  pred_test = model.predict(xgb.DMatrix(X_test))
+  # XGBoost booster — save in its native format
+  model.save_model('artifacts/xgb_model.json')
+else:
+  pred_val = model.predict(X_val)
+  pred_test = model.predict(X_test)
+  joblib.dump(model, 'artifacts/histgb_deviation_model.joblib')
+
+rmse_val = mean_squared_error(y_val, pred_val, squared=False)
+rmse_test = mean_squared_error(y_test, pred_test, squared=False)
+print(f'RMSE val: {rmse_val:.4f}')
+print(f'RMSE test: {rmse_test:.4f}')
+
+pd.DataFrame({'y_true': y_val, 'y_pred': pred_val}).to_csv('artifacts/val_predictions_xgb.csv', index=False)
+pd.DataFrame({'y_true': y_test, 'y_pred': pred_test}).to_csv('artifacts/test_predictions_xgb.csv', index=False)
+print('Saved model and predictions in artifacts/')
+```
+
+```{python}
+import pandas as pd
+import numpy as np
+from pathlib import Path
+import joblib
+from sklearn.metrics import mean_squared_error
+import xgboost as xgb
+
+p = Path('premodeldatav1.csv')
+if not p.exists():
+    print('premodeldatav1.csv not found in cwd:', Path('.').resolve())
+    raise SystemExit(1)
+
+print('Using xgboost version', xgb.__version__)
+
+df = pd.read_csv(p)
+features = ['GridPosition','AirTemp_C','TrackTemp_C','Humidity_%','Pressure_hPa','WindSpeed_mps','WindDirection_deg','SOFT','MEDIUM','HARD','INTERMEDIATE','WET','races_prior_this_season']
+target = 'DeviationFromAvg_s'
+
+df = df[~df[target].isna()].copy()
+train = df[df.get('Season') == 2023].copy()
+val = df[df.get('Season') == 2024].copy()
+test = df[df.get('Season') == 2025].copy()
+
+if len(train)==0 or len(val)==0 or len(test)==0:
+    print('Seasonal split incomplete, counts:', len(train), len(val), len(test))
+    raise SystemExit(1)
+
+X_train = train[features].copy()
+X_val = val[features].copy()
+X_test = test[features].copy()
+y_train = train[target]
+y_val = val[target]
+y_test = test[target]
+
+# impute medians
+for col in features:
+    med = X_train[col].median()
+    X_train[col] = X_train[col].fillna(med)
+    X_val[col] = X_val[col].fillna(med)
+    X_test[col] = X_test[col].fillna(med)
+
+# convert to DMatrix
+dtrain = xgb.DMatrix(X_train, label=y_train)
+dval = xgb.DMatrix(X_val, label=y_val)
+dtest = xgb.DMatrix(X_test, label=y_test)
+
+params = {
+    'objective': 'reg:squarederror',
+    'eval_metric': 'rmse',
+    'learning_rate': 0.05,
+    'max_depth': 6,
+    'seed': 42,
+}
+
+evals = [(dtrain, 'train'), (dval, 'val')]
+print('Beginning training...')
+model = xgb.train(params, dtrain, num_boost_round=1000, evals=evals, early_stopping_rounds=50, verbose_eval=50)
+print('Training done. Best iteration:', model.best_iteration)
+
+pred_val = model.predict(dval)
+pred_test = model.predict(dtest)
+
+rmse_val = mean_squared_error(y_val, pred_val, squared=False)
+rmse_test = mean_squared_error(y_test, pred_test, squared=False)
+print(f'XGBoost RMSE val: {rmse_val:.4f}')
+print(f'XGBoost RMSE test: {rmse_test:.4f}')
+
+Path('artifacts').mkdir(exist_ok=True)
+model.save_model('artifacts/xgb_model.json')
+joblib.dump({'features': features}, 'artifacts/xgb_feature_list.joblib')
+
+import pandas as pd
+pd.DataFrame({'y_true': y_val, 'y_pred': pred_val}).to_csv('artifacts/val_predictions_xgb_run.csv', index=False)
+pd.DataFrame({'y_true': y_test, 'y_pred': pred_test}).to_csv('artifacts/test_predictions_xgb_run.csv', index=False)
+print('Saved model and predictions in artifacts/')
+```
+
+## XGBoost — full training script (runnable)
+
+The block below contains the complete XGBoost training script. Run it directly in a kernel that has xgboost installed (or use the external-run block after it to run with a conda python).
+
+```{python}
+# Full XGBoost training script — run in a kernel with xgboost available
+import pandas as pd
+from pathlib import Path
+import joblib
+from sklearn.metrics import mean_squared_error
+import xgboost as xgb
+
+p = Path('premodeldatav1.csv')
+df = pd.read_csv(p)
+
+features = ['GridPosition','AirTemp_C','TrackTemp_C','Humidity_%','Pressure_hPa','WindSpeed_mps','WindDirection_deg','SOFT','MEDIUM','HARD','INTERMEDIATE','WET','races_prior_this_season']
+target = 'DeviationFromAvg_s'
+
+df = df[~df[target].isna()].copy()
+train = df[df.get('Season') == 2023].copy()
+val = df[df.get('Season') == 2024].copy()
+test = df[df.get('Season') == 2025].copy()
+
+if len(train)==0 or len(val)==0 or len(test)==0:
+  raise RuntimeError('Seasonal split incomplete; ensure seasons 2023/2024/2025 are present')
+
+X_train = train[features].copy()
+X_val = val[features].copy()
+X_test = test[features].copy()
+y_train = train[target]
+y_val = val[target]
+y_test = test[target]
+
+# simple median imputation using train medians
+for col in features:
+  med = X_train[col].median()
+  X_train[col] = X_train[col].fillna(med)
+  X_val[col] = X_val[col].fillna(med)
+  X_test[col] = X_test[col].fillna(med)
+
+dtrain = xgb.DMatrix(X_train, label=y_train)
+dval = xgb.DMatrix(X_val, label=y_val)
+dtest = xgb.DMatrix(X_test, label=y_test)
+
+params = {
+  'objective': 'reg:squarederror',
+  'eval_metric': 'rmse',
+  'learning_rate': 0.05,
+  'max_depth': 6,
+  'seed': 42,
+}
+
+print('Beginning training...')
+bst = xgb.train(params, dtrain, num_boost_round=1000, evals=[(dtrain,'train'),(dval,'val')], early_stopping_rounds=50, verbose_eval=50)
+print('Training finished. Best iteration:', getattr(bst, 'best_iteration', None))
+
+pred_val = bst.predict(dval)
+pred_test = bst.predict(dtest)
+
+rmse_val = mean_squared_error(y_val, pred_val, squared=False)
+rmse_test = mean_squared_error(y_test, pred_test, squared=False)
+print(f'XGBoost RMSE val: {rmse_val:.4f}')
+print(f'XGBoost RMSE test: {rmse_test:.4f}')
+
+Path('artifacts').mkdir(exist_ok=True)
+bst.save_model('artifacts/xgb_model_direct.json')
+joblib.dump({'features': features}, 'artifacts/xgb_feature_list_direct.joblib')
+pd.DataFrame({'y_true': y_val.reset_index(drop=True), 'y_pred': pred_val}).to_csv('artifacts/val_predictions_xgb_direct.csv', index=False)
+pd.DataFrame({'y_true': y_test.reset_index(drop=True), 'y_pred': pred_test}).to_csv('artifacts/test_predictions_xgb_direct.csv', index=False)
+print('Saved direct xgboost artifacts to artifacts/')
+```
+
+```{python}
+# External-run helper: write the same script to artifacts/run_xgb_full.py and run it with a detected conda python
+import os
+import sys
+import subprocess
+from pathlib import Path
+
+# detect conda python (CONDA_PREFIX or common locations)
+conda_python = None
+if os.environ.get('CONDA_PREFIX'):
+  maybe = os.path.join(os.environ['CONDA_PREFIX'], 'bin', 'python')
+  if os.path.exists(maybe):
+    conda_python = maybe
+for candidate in ['/opt/anaconda3/bin/python', '/usr/local/anaconda3/bin/python', '/opt/homebrew/bin/python', '/usr/bin/python3']:
+  if conda_python is None and os.path.exists(candidate):
+    conda_python = candidate
+
+script_path = Path('artifacts/run_xgb_full.py')
+script_path.parent.mkdir(exist_ok=True)
+
+script = '''import pandas as pd
+from pathlib import Path
+import xgboost as xgb
+from sklearn.metrics import mean_squared_error
+
+p = Path('premodeldatav1.csv')
+df = pd.read_csv(p)
+features = %s
+target = '%s'
+df = df[~df[target].isna()].copy()
+train = df[df.get('Season') == 2023].copy()
+val = df[df.get('Season') == 2024].copy()
+test = df[df.get('Season') == 2025].copy()
+X_train = train[features].copy()
+X_val = val[features].copy()
+X_test = test[features].copy()
+y_train = train[target]
+y_val = val[target]
+y_test = test[target]
+for col in features:
+  med = X_train[col].median()
+  X_train[col] = X_train[col].fillna(med)
+  X_val[col] = X_val[col].fillna(med)
+  X_test[col] = X_test[col].fillna(med)
+
+dtrain = xgb.DMatrix(X_train, label=y_train)
+dval = xgb.DMatrix(X_val, label=y_val)
+dtest = xgb.DMatrix(X_test, label=y_test)
+params = {'objective':'reg:squarederror','eval_metric':'rmse','learning_rate':0.05,'max_depth':6,'seed':42}
+bst = xgb.train(params, dtrain, num_boost_round=1000, evals=[(dtrain,'train'),(dval,'val')], early_stopping_rounds=50, verbose_eval=50)
+Path('artifacts').mkdir(exist_ok=True)
+bst.save_model('artifacts/xgb_model_external.json')
+pd.DataFrame({'y_true': y_val.reset_index(drop=True), 'y_pred': bst.predict(dval)}).to_csv('artifacts/val_predictions_xgb_external.csv', index=False)
+pd.DataFrame({'y_true': y_test.reset_index(drop=True), 'y_pred': bst.predict(dtest)}).to_csv('artifacts/test_predictions_xgb_external.csv', index=False)
+print('External xgboost run complete')
+'''
+
+script = script % (repr(['GridPosition','AirTemp_C','TrackTemp_C','Humidity_%','Pressure_hPa','WindSpeed_mps','WindDirection_deg','SOFT','MEDIUM','HARD','INTERMEDIATE','WET','races_prior_this_season']), 'DeviationFromAvg_s')
+script_path.write_text(script)
+
+if conda_python and os.path.exists(conda_python):
+  print('Running external script with', conda_python)
+  rc = subprocess.call([conda_python, str(script_path)])
+  print('external script exit code', rc)
+else:
+  print('No conda python detected; to run external script manually execute:')
+  print('  /path/to/conda/python', script_path)
+```
+
+## Decision Tree — quick runnable example
+
+The block below trains a DecisionTreeRegressor on the same features and seasonal split. It's provided as a code block you can run in the notebook; it will save the model and prediction CSVs to `artifacts/`.
+
+```{python}
+# Decision Tree training example
+import pandas as pd
+from pathlib import Path
+import joblib
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.metrics import mean_squared_error
+
+p = Path('premodeldatav1.csv')
+df = pd.read_csv(p)
+
+features = ['GridPosition','AirTemp_C','TrackTemp_C','Humidity_%','Pressure_hPa','WindSpeed_mps','WindDirection_deg','SOFT','MEDIUM','HARD','INTERMEDIATE','WET','races_prior_this_season']
+target = 'DeviationFromAvg_s'
+
+# drop missing-target rows and split by season
+df = df[~df[target].isna()].copy()
+train = df[df.get('Season') == 2023].copy()
+val = df[df.get('Season') == 2024].copy()
+test = df[df.get('Season') == 2025].copy()
+
+if len(train)==0 or len(val)==0 or len(test)==0:
+  raise RuntimeError(f'Seasonal split incomplete: counts (train,val,test)=({len(train)},{len(val)},{len(test)})')
+
+X_train = train[features].copy()
+X_val = val[features].copy()
+X_test = test[features].copy()
+y_train = train[target]
+y_val = val[target]
+y_test = test[target]
+
+# simple median imputation (fit on train)
+for col in features:
+  med = X_train[col].median()
+  X_train[col] = X_train[col].fillna(med)
+  X_val[col] = X_val[col].fillna(med)
+  X_test[col] = X_test[col].fillna(med)
+
+# train a shallow decision tree
+model = DecisionTreeRegressor(max_depth=6, random_state=42)
+model.fit(X_train, y_train)
+
+# predictions and evaluation
+pred_val = model.predict(X_val)
+pred_test = model.predict(X_test)
+rmse_val = mean_squared_error(y_val, pred_val, squared=False)
+rmse_test = mean_squared_error(y_test, pred_test, squared=False)
+print(f'DecisionTree RMSE val: {rmse_val:.4f}')
+print(f'DecisionTree RMSE test: {rmse_test:.4f}')
+
+Path('artifacts').mkdir(exist_ok=True)
+joblib.dump(model, 'artifacts/decisiontree_deviation_model.joblib')
+pd.DataFrame({'y_true': y_val, 'y_pred': pred_val}).to_csv('artifacts/val_predictions_decisiontree.csv', index=False)
+pd.DataFrame({'y_true': y_test, 'y_pred': pred_test}).to_csv('artifacts/test_predictions_decisiontree.csv', index=False)
+print('Saved Decision Tree model and predictions to artifacts/')
+```
