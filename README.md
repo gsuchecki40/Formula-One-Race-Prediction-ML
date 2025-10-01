@@ -113,8 +113,6 @@ curl http://localhost:8000/health
 curl http://localhost:8000/version
 ```
 
-If you'd like, I can add a small Makefile to bundle these commands.
-
 ## Caches & Artifacts (where to store large files)
 
 Small, reproducible projects work best when large, regenerable caches are kept out of Git history. This repo follows that pattern:
@@ -128,11 +126,7 @@ Recommended workflows:
   - Let scripts write their caches to `./f1_cache/` (this is already the default for FastF1 in many helpers). The `f1_cache/` directory is excluded from the repository so it will stay on your machine only.
 
 2. Reproducible artifacts (models, reports)
-  - Model artifacts (joblib / xgb json files) and presentation outputs are kept under `artifacts/` and `presentation/`. If you want a lighter repo, move large model files out of the repo and host them as release assets or in an object store (S3/GCS) and document download steps below.
-
-3. Sharing large caches or models
-  - Option A (recommended for sharing): Upload model tarballs or caches to a release on GitHub or to cloud storage and add a short download script `scripts/fetch_models.sh` (not added by default).
-  - Option B: Use Git LFS for versioning large binaries. If you choose LFS, track patterns such as `artifacts/*.joblib`, `*.ff1pkl`, and `*.sqlite` and be mindful of any storage quotas.
+  - Model artifacts (joblib / xgb json files) and presentation outputs are kept under `artifacts/` and `presentation/`. 
 
 How to reproduce the presentation and artifacts
 
@@ -160,74 +154,8 @@ How to reproduce the presentation and artifacts
 
 If you'd like, I can add a small `scripts/fetch_models.sh` that downloads a release zip or cloud-hosted models and places them under `artifacts/`.
 
-## Pushing this repo to GitHub (suggested)
-
-If you'd like to publish this project to GitHub and show the demo in CI, follow these steps from the repo root (macOS zsh):
-
-1. Initialize git, add files and commit:
-
-```bash
-git init
-git add .
-git commit -m "Initial import: Formula1 scorer + demo"
-```
-
-2. Create GitHub repo (replace <OWNER/REPO> with your repo). Option A: use GitHub CLI:
-
-```bash
-# Formula 1 Predictive Model
-
-This repository contains scripts and artifacts for preprocessing, training, scoring and presenting a Formula 1 qualifying model.
-
-Quick start
- - Run tests:
-   ```bash
-   python3 -m pytest -q
-   ```
-
- - Score a CSV and write outputs to `artifacts/`:
-   ```bash
-   python3 scripts/run_score_and_metrics.py --input premodeldatav1.csv
-   ```
-
- - Regenerate the presentation after scoring:
-   ```bash
-   python3 presentation/generate_presentation.py
-   open presentation/index.html
-   ```
-
- - Run the local scoring API (requires dependencies):
-   ```bash
-   pip install -r requirements_pinned.txt
-   uvicorn serve.app:app --reload --port 8000
-   ```
-
-Docker
- - Build:
-   ```bash
-   docker build -t f1-scorer:latest .
-   ```
-
- - Run (mount `artifacts/` so models/reports can be swapped):
-   ```bash
-   docker run -p 8000:8000 -v $(pwd)/artifacts:/app/artifacts f1-scorer:latest
-   ```
 
 Important notes
- - Do not commit copyrighted or third-party logos or images inside `presentation/` or `artifacts/`. Keep any copyrighted race reports or logos out of the repo. Presentation images that are safe to commit (logos you own or have rights to) can be added, but by default avoid committing large binary assets.
  - Model artifacts (joblib, xgb json) and generated reports are stored in `artifacts/` and `presentation/`. For a lightweight repo consider hosting large models as release assets or using Git LFS.
  - If you provide a raw CSV for scoring, the scorer expects the columns used in `premodel_canonical.csv` (GridPosition, AvgQualiTime, Rain, etc.). The scorer attempts fallbacks when inputs are partial.
 
-Publishing to GitHub
- - You can push this repo to GitHub. If authentication is set up locally (SSH or gh CLI), the steps are:
-   ```bash
-   git remote add origin git@github.com:gsuchecki40/Formula-1-Predictive-Model.git
-   git push -u origin main
-   ```
-
-What I can do next
- - Update README further or add a short CONTRIBUTING.md
- - Add a small script to download models (scripts/fetch_models.sh)
- - Help prepare a GitHub release with model artifacts (recommended for sharing large models)
-
-If you want me to attempt to push this workspace to your GitHub remote I can try — I'll attempt a push and report any authentication errors and the exact commands you can run locally if needed.
