@@ -115,6 +115,51 @@ curl http://localhost:8000/version
 
 If you'd like, I can add a small Makefile to bundle these commands.
 
+## Caches & Artifacts (where to store large files)
+
+Small, reproducible projects work best when large, regenerable caches are kept out of Git history. This repo follows that pattern:
+
+- Keep FastF1 / session caches and the HTTP SQLite cache locally under `f1_cache/` (this directory is ignored by git in `.gitignore`).
+- Do not commit `f1_cache/` or any `*.ff1pkl` / `*.sqlite` files — they are large and can break pushes. Instead keep them locally or store them in a separate archive.
+
+Recommended workflows:
+
+1. Local caching (fast development)
+  - Let scripts write their caches to `./f1_cache/` (this is already the default for FastF1 in many helpers). The `f1_cache/` directory is excluded from the repository so it will stay on your machine only.
+
+2. Reproducible artifacts (models, reports)
+  - Model artifacts (joblib / xgb json files) and presentation outputs are kept under `artifacts/` and `presentation/`. If you want a lighter repo, move large model files out of the repo and host them as release assets or in an object store (S3/GCS) and document download steps below.
+
+3. Sharing large caches or models
+  - Option A (recommended for sharing): Upload model tarballs or caches to a release on GitHub or to cloud storage and add a short download script `scripts/fetch_models.sh` (not added by default).
+  - Option B: Use Git LFS for versioning large binaries. If you choose LFS, track patterns such as `artifacts/*.joblib`, `*.ff1pkl`, and `*.sqlite` and be mindful of any storage quotas.
+
+How to reproduce the presentation and artifacts
+
+1. Make sure you have model artifacts available in `artifacts/` (either by running training locally or by downloading release assets):
+
+  ```bash
+  # If you keep models locally, ensure artifacts/ contains the preprocessing pipeline and models
+  ls artifacts | head -n 20
+  ```
+
+2. Run the scorer to generate scored CSVs:
+
+  ```bash
+  python3 scripts/run_score_and_metrics.py --input premodeldatav1.csv
+  ```
+
+3. Regenerate the presentation HTML and images (uses the outputs from `artifacts/`):
+
+  ```bash
+  python3 presentation/generate_presentation.py
+  open presentation/index.html
+  ```
+
+4. If you need to rebuild models from raw sources, follow the scripts under `artifacts/` (for example, `artifacts/retrain_minimal_features.py`) — this will produce `artifacts/preprocessing_pipeline.joblib` and model files used by the scorer.
+
+If you'd like, I can add a small `scripts/fetch_models.sh` that downloads a release zip or cloud-hosted models and places them under `artifacts/`.
+
 ## Pushing this repo to GitHub (suggested)
 
 If you'd like to publish this project to GitHub and show the demo in CI, follow these steps from the repo root (macOS zsh):
