@@ -1,0 +1,11 @@
+{
+  "raw_total_rows": 1238,
+  "raw_retirements": 121,
+  "baseline_n_rows": 1077,
+  "baseline_rmse_all": 48.46997689455514,
+  "baseline_mae_all": 22.40045874074089,
+  "filtered_n_rows": 1077,
+  "filtered_rmse": 48.46997689455514,
+  "filtered_mae": 22.400458740740916,
+  "retirements_with_target": 0
+}

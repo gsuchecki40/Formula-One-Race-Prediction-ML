@@ -1,0 +1,29 @@
+FullName,TeamName,prediction,gap_from_winner,predicted_start_tyre
+Max Verstappen,Red Bull Racing,-36.26437,0.0,MEDIUM
+Lando Norris,McLaren,-36.192345,0.0720253,MEDIUM
+Oscar Piastri,McLaren,-34.874767,1.3896027,MEDIUM
+George Russell,Mercedes,-33.667957,2.5964127,MEDIUM
+Charles Leclerc,Ferrari,-33.413254,2.8511162,MEDIUM
+Kimi Antonelli,Mercedes,-33.368515,2.895855,MEDIUM
+Fernando Alonso,Aston Martin,-27.364126,8.900244,MEDIUM
+Sergio Perez,Red Bull Racing,-27.150883,9.113487,MEDIUM
+Lewis Hamilton,Ferrari,-27.045807,9.218563,MEDIUM
+Jack Doohan,Alpine,-26.655418,9.608952,MEDIUM
+Nico Hulkenberg,Kick Sauber,-25.491089,10.773281,MEDIUM
+Carlos Sainz,Williams,-25.491089,10.773281,MEDIUM
+Franco Colapinto,Alpine,-22.038857,14.225513,MEDIUM
+Daniel Ricciardo,RB,-21.49552,14.76885,MEDIUM
+Kevin Magnussen,Haas F1 Team,-19.61053,16.65384,SOFT
+Nyck De Vries,AlphaTauri,-14.974076,21.290295,SOFT
+Valtteri Bottas,Kick Sauber,-11.59868,24.665691,HARD
+Guanyu Zhou,Kick Sauber,-11.257576,25.006794,HARD
+Yuki Tsunoda,Red Bull Racing,-9.363902,26.900467,HARD
+Gabriel Bortoleto,Kick Sauber,-9.331922,26.93245,HARD
+Esteban Ocon,Haas F1 Team,-9.203238,27.061132,HARD
+Oliver Bearman,Haas F1 Team,-9.066215,27.198154,HARD
+Alexander Albon,Williams,-9.036775,27.227596,HARD
+Lance Stroll,Aston Martin,-7.3828773,28.881493,HARD
+Logan Sargeant,Williams,-6.543532,29.720839,HARD
+Isack Hadjar,Racing Bulls,-6.5042863,29.760084,HARD
+Liam Lawson,Racing Bulls,-6.471081,29.79329,HARD
+Pierre Gasly,Alpine,-6.430416,29.833954,HARD

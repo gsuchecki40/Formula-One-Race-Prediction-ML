@@ -1,0 +1,21 @@
+GridPosition,AvgQualiTime,weather_tire_cluster,SOFT,MEDIUM,HARD,INTERMEDIATE,WET,races_prior_this_season,Rain,PointsProp,Status,DriverId,FullName,TeamName,TrackTemp_C,AirTemp_C,Humidity_%,Pressure_hPa,WindSpeed_mps,WindDirection_deg
+1,90.0,0,0,0,1,0,0,5,0,0.5,Finished,max_verstappen,Max Verstappen,Red Bull Racing,27,21,56,1014,2.1,180
+2,91.0,0,0,0,1,0,0,5,0,0.3,Finished,c_sainz,Carlos Sainz,Williams,27,21,56,1014,2.1,180
+3,92.0,0,0,0,1,0,0,3,0,0.05,Finished,liam_lawson,Liam Lawson,Racing Bulls,27,21,56,1014,2.1,180
+4,93.0,0,0,1,0,0,0,2,0,0.02,Finished,k_antonelli,Kimi Antonelli,Mercedes,27,21,56,1014,2.1,180
+5,94.0,0,0,1,0,0,0,4,0,0.1,Finished,russell,George Russell,Mercedes,27,21,56,1014,2.1,180
+6,95.0,0,0,0,1,0,0,3,0,0.05,Finished,y_tsudoda,Yuki Tsunoda,Red Bull Racing,27,21,56,1014,2.1,180
+7,96.0,0,0,1,0,0,0,6,0,0.2,Finished,norris,Lando Norris,McLaren,27,21,56,1014,2.1,180
+8,97.0,0,0,0,1,0,0,1,0,0.01,Finished,isack_hadjar,Isack Hadjar,Racing Bulls,27,21,56,1014,2.1,180
+9,98.0,0,0,1,0,0,0,8,0,0.25,Finished,piastri,Oscar Piastri,McLaren,27,21,56,1014,2.1,180
+10,99.0,0,0,0,1,0,0,10,0,0.15,Finished,leclerc,Charles Leclerc,Ferrari,27,21,56,1014,2.1,180
+11,100.0,0,0,0,1,0,0,12,0,0.4,Finished,alonso,Fernando Alonso,Aston Martin,27,21,56,1014,2.1,180
+12,101.0,0,0,1,0,0,0,15,0,0.35,Finished,hamilton,Lewis Hamilton,Ferrari,27,21,56,1014,2.1,180
+13,102.0,0,0,0,1,0,0,2,0,0.02,Finished,bortoleto,Gabriel Bortoleto,Kick Sauber,27,21,56,1014,2.1,180
+14,103.0,0,0,0,1,0,0,4,0,0.05,Finished,stroll,Lance Stroll,Aston Martin,27,21,56,1014,2.1,180
+15,104.0,0,0,0,1,0,0,1,0,0.01,Finished,bearman,Oliver Bearman,Haas,27,21,56,1014,2.1,180
+16,105.0,0,0,0,1,0,0,0,0,0.0,Finished,colapinto,Franco Colapinto,Alpine,27,21,56,1014,2.1,180
+17,106.0,0,0,0,1,0,0,10,0,0.0,Finished,hulkenberg,Nico Hulkenberg,Kick Sauber,27,21,56,1014,2.1,180
+18,107.0,0,0,0,1,0,0,9,0,0.0,Finished,gasly,Pierre Gasly,Alpine,27,21,56,1014,2.1,180
+19,108.0,0,0,0,1,0,0,7,0,0.0,Finished,albon,Alexander Albon,Williams,27,21,56,1014,2.1,180
+20,109.0,0,0,0,1,0,0,11,0,0.0,Finished,ocon,Esteban Ocon,Haas,27,21,56,1014,2.1,180

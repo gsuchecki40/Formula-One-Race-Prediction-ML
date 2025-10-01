@@ -1,0 +1,29 @@
+GridPosition,AvgQualiTime,weather_tire_cluster,SOFT,MEDIUM,HARD,INTERMEDIATE,WET,races_prior_this_season,Rain,PointsProp,Status,DriverId,FullName,TeamName,TrackTemp_C,AirTemp_C,Humidity_%
+14.0,0.0,0,0,0,1,0,0,15.0,0,0.1706666666666666,Finished,albon,Alexander Albon,Williams,31.0,28.5,80
+8.0,0.0,0,0,1,0,0,0,15.0,0,0.08,Finished,alonso,Fernando Alonso,Aston Martin,31.0,28.5,80
+6.0,0.0,0,0,1,0,0,0,15.0,0,0.16,Finished,antonelli,Kimi Antonelli,Mercedes,31.0,28.5,80
+11.0,0.0,0,0,0,1,0,0,15.0,0,0.0373333333333333,Finished,bearman,Oliver Bearman,Haas F1 Team,31.0,28.5,80
+7.0,0.0,0,0,0,1,0,0,15.0,0,0.0373333333333333,Finished,bortoleto,Gabriel Bortoleto,Kick Sauber,31.0,28.5,80
+9.0,94.746555,0,0,0,1,0,0,23.0,0,0.0,Finished,bottas,Valtteri Bottas,Kick Sauber,31.0,28.5,80
+17.0,0.0,0,0,1,0,0,0,9.0,0,0.0,Finished,colapinto,Franco Colapinto,Alpine,31.0,28.5,80
+18.0,109.297,0,1,0,0,0,0,9.0,0,0.0,Finished,de_vries,Nyck De Vries,AlphaTauri,31.0,28.5,80
+14.0,100.738555,0,0,1,0,0,0,5.0,0,0.0,Finished,doohan,Jack Doohan,Alpine,31.0,28.5,80
+20.0,0.0,0,0,0,1,0,0,15.0,0,0.0506666666666666,Finished,gasly,Pierre Gasly,Alpine,31.0,28.5,80
+19.0,0.0,0,0,0,1,0,0,15.0,0,0.096,Finished,hadjar,Isack Hadjar,Racing Bulls,31.0,28.5,80
+10.0,0.0,0,0,1,0,0,0,15.0,0,0.2533333333333333,Finished,hamilton,Lewis Hamilton,Ferrari,31.0,28.5,80
+12.0,0.0,0,0,1,0,0,0,15.0,0,0.0986666666666666,Finished,hulkenberg,Nico Hulkenberg,Kick Sauber,31.0,28.5,80
+14.0,99.918571,0,1,0,0,0,0,21.0,0,0.0266666666666666,Finished,kevin_magnussen,Kevin Magnussen,Haas F1 Team,31.0,28.5,80
+18.0,0.0,0,0,0,1,0,0,15.0,0,0.0533333333333333,Finished,lawson,Liam Lawson,Racing Bulls,31.0,28.5,80
+4.0,0.0,0,0,1,0,0,0,15.0,0,0.3786666666666666,Finished,leclerc,Charles Leclerc,Ferrari,31.0,28.5,80
+1.0,0.0,0,0,1,0,0,0,15.0,0,0.5093333333333333,Finished,max_verstappen,Max Verstappen,Red Bull Racing,31.0,28.5,80
+2.0,0.0,0,0,1,0,0,0,15.0,0,0.6933333333333334,Finished,norris,Lando Norris,McLaren,31.0,28.5,80
+15.0,0.0,0,0,0,1,0,0,15.0,0,0.064,Finished,ocon,Esteban Ocon,Haas F1 Team,31.0,28.5,80
+10.0,100.281333,0,0,1,0,0,0,23.0,0,0.24,Finished,perez,Sergio Perez,Red Bull Racing,31.0,28.5,80
+3.0,0.0,0,0,1,0,0,0,15.0,0,0.768,Finished,piastri,Oscar Piastri,McLaren,31.0,28.5,80
+16.0,107.427666,0,0,1,0,0,0,17.0,0,0.0164705882352941,Finished,ricciardo,Daniel Ricciardo,RB,31.0,28.5,80
+5.0,0.0,0,0,1,0,0,0,15.0,0,0.464,Finished,russell,George Russell,Mercedes,31.0,28.5,80
+13.0,0.0,0,0,1,0,0,0,15.0,0,0.0346666666666666,Finished,sainz,Carlos Sainz,Williams,31.0,28.5,80
+18.0,0.0,0,0,0,1,0,0,13.0,0,0.0,Finished,sargeant,Logan Sargeant,Williams,31.0,28.5,80
+16.0,0.0,0,0,0,1,0,0,14.0,0,0.08,Finished,stroll,Lance Stroll,Aston Martin,31.0,28.5,80
+9.0,0.0,0,0,0,1,0,0,15.0,0,0.016,Finished,tsunoda,Yuki Tsunoda,Red Bull Racing,31.0,28.5,80
+15.0,99.449,0,0,0,1,0,0,23.0,0,0.0069565217391304,Finished,zhou,Guanyu Zhou,Kick Sauber,31.0,28.5,80

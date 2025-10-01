@@ -32,6 +32,26 @@ df = pd.read_csv(csv_path)
 target = 'DeviationFromAvg_s'
 df = df[~df[target].isna()].copy()
 
+# Ensure PointsProp exists (some historical CSVs may lack it). Compute as Points / max(Points) or fill with 0.
+if 'PointsProp' not in df.columns:
+    if 'Points' in df.columns:
+        max_pts = df['Points'].max()
+        if pd.isna(max_pts) or max_pts == 0:
+            df['PointsProp'] = 0.0
+        else:
+            df['PointsProp'] = df['Points'] / float(max_pts)
+    else:
+        df['PointsProp'] = 0.0
+
+# Minimal coercions so sklearn imputers that expect numeric data don't fail.
+if 'Rain' in df.columns:
+    rain_map = {'NoRain': 0, 'Rain': 1, 'LightRain': 1, 'HeavyRain': 1, 'Drizzle': 1}
+    df['Rain'] = df['Rain'].map(lambda x: rain_map.get(str(x).strip(), 0))
+
+for c in ('weather_tire_cluster', 'PointsProp', 'GridPosition', 'AvgQualiTime', 'races_prior_this_season'):
+    if c in df.columns:
+        df[c] = pd.to_numeric(df[c], errors='coerce').fillna(0)
+
 # seasonal split
 train = df[df['Season'] == 2023].copy()
 val = df[df['Season'] == 2024].copy()
@@ -56,7 +76,7 @@ y_train = train[target]
 y_val = val[target]
 
 param_dist = {
-    'max_depth': randint(3,8),
+    'max_depth': randint(3,12),
     'learning_rate': np.linspace(0.01,0.2,20),
     'n_estimators': randint(50,400),
     'subsample': np.linspace(0.6,1.0,5),
