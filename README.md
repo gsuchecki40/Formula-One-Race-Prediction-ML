@@ -175,25 +175,59 @@ git commit -m "Initial import: Formula1 scorer + demo"
 2. Create GitHub repo (replace <OWNER/REPO> with your repo). Option A: use GitHub CLI:
 
 ```bash
-gh repo create <owner>/<repo> --public --source=. --remote=origin --push
-```
+# Formula 1 Predictive Model
 
-Option B: create repo on github.com and add remote:
+This repository contains scripts and artifacts for preprocessing, training, scoring and presenting a Formula 1 qualifying model.
 
-```bash
-git remote add origin git@github.com:<owner>/<repo>.git
-git push -u origin main
-```
+Quick start
+ - Run tests:
+   ```bash
+   python3 -m pytest -q
+   ```
 
-3. After pushing, the `showcase` workflow will run on push and PRs for `main`/`master`. The workflow runs tests, executes `scripts/run_demo.py`, regenerates the `presentation/` folder and `artifacts/manifest.json`, and uploads `presentation/` as a workflow artifact.
+ - Score a CSV and write outputs to `artifacts/`:
+   ```bash
+   python3 scripts/run_score_and_metrics.py --input premodeldatav1.csv
+   ```
 
-4. To run the demo locally (recommended before pushing):
+ - Regenerate the presentation after scoring:
+   ```bash
+   python3 presentation/generate_presentation.py
+   open presentation/index.html
+   ```
 
-```bash
-python3 -m venv .venv && source .venv/bin/activate
-pip install -r requirements_pinned.txt
-python3 scripts/run_demo.py
-open presentation/index.html
-```
+ - Run the local scoring API (requires dependencies):
+   ```bash
+   pip install -r requirements_pinned.txt
+   uvicorn serve.app:app --reload --port 8000
+   ```
 
-If you want me to prepare a GitHub repo (create it and push), I can generate the exact git commands for you to run locally — but I can't push from here.
+Docker
+ - Build:
+   ```bash
+   docker build -t f1-scorer:latest .
+   ```
+
+ - Run (mount `artifacts/` so models/reports can be swapped):
+   ```bash
+   docker run -p 8000:8000 -v $(pwd)/artifacts:/app/artifacts f1-scorer:latest
+   ```
+
+Important notes
+ - Do not commit copyrighted or third-party logos or images inside `presentation/` or `artifacts/`. Keep any copyrighted race reports or logos out of the repo. Presentation images that are safe to commit (logos you own or have rights to) can be added, but by default avoid committing large binary assets.
+ - Model artifacts (joblib, xgb json) and generated reports are stored in `artifacts/` and `presentation/`. For a lightweight repo consider hosting large models as release assets or using Git LFS.
+ - If you provide a raw CSV for scoring, the scorer expects the columns used in `premodel_canonical.csv` (GridPosition, AvgQualiTime, Rain, etc.). The scorer attempts fallbacks when inputs are partial.
+
+Publishing to GitHub
+ - You can push this repo to GitHub. If authentication is set up locally (SSH or gh CLI), the steps are:
+   ```bash
+   git remote add origin git@github.com:gsuchecki40/Formula-1-Predictive-Model.git
+   git push -u origin main
+   ```
+
+What I can do next
+ - Update README further or add a short CONTRIBUTING.md
+ - Add a small script to download models (scripts/fetch_models.sh)
+ - Help prepare a GitHub release with model artifacts (recommended for sharing large models)
+
+If you want me to attempt to push this workspace to your GitHub remote I can try — I'll attempt a push and report any authentication errors and the exact commands you can run locally if needed.
