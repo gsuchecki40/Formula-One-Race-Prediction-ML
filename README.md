@@ -1,6 +1,6 @@
-# Formula1 Qualifying Model
+# Formula1 ML Result Model
 
-Small project for preprocessing, training, scoring and presenting a Formula1 qualifying model.
+Small project for preprocessing, training, scoring and presenting a Formula1 Race Prediction.
 
 ## Quick tasks
 
